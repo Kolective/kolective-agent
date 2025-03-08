@@ -105,8 +105,13 @@ class ZerePyServer:
             
         @self.app.on_event("startup")
         async def startup_event():
+            # Monitoring Action by Tweet
             asyncio.create_task(transactions(action='buy'))
             asyncio.create_task(transactions(action='sell'))
+            
+            # Monitoring Sell Action by Performance
+            # Code here
+            
         
         
         @self.app.post("/generate-risk-profile")
@@ -194,6 +199,11 @@ class ZerePyServer:
         @self.app.post("/agent/get-faucet")
         async def get_eth_faucet(request: QueryUserWallet):
             response = {"txhash": await self.agent_wallet._fund_wallet(request.user_address)}
+            return JSONResponse(content=response)
+        
+        @self.app.post("/agent/get-risk-profile")
+        async def get_risk_profile(request: QueryUserWallet):
+            response = {"risk_profile": _get_user_risk(request.user_address)}
             return JSONResponse(content=response)
         
         @self.app.post("/agent/mint")
