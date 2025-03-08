@@ -124,7 +124,7 @@ class ZerePyServer:
         
         @self.app.post("/generate-recommendation-kol")
         async def get_recommendation_kol(request: QueryRequestRecommendation):
-            fine_tuned_prompt = "From the given data, always return a response in the following JSON format: {\"id\": id}, where id is the value of the id key from the first object in the kols array, not the username or any other value."
+            fine_tuned_prompt = "From the given data, always return a response in the following JSON format: {\"id\": \"id\"}, where id is the value of the id key from the first object in the kols array, not the username or any other value."
             user_risk = _get_user_risk(request.user_address)
             response = json.loads(self.agent.prompt_llm(fine_tuned_prompt= fine_tuned_prompt, prompt=request.data, rag=True, user_risk=user_risk))
             
