@@ -14,9 +14,9 @@ import json
 import orjson
 from src.agent import ZerePyAgent
 from src.wallet import AgentWallet
-from src.server.schemas import QueryRequestClassifier, QueryUserWallet, QueryMint, QueryRequestRecommendation
+from src.server.schemas import QueryRequestClassifier, QueryUserWallet, QueryMint, QueryRequestRecommendation, QuerySwap
 from src.server.utils import _update_risk_profile, _get_user_risk, _parse_data_kol
-from src.server.simulation import transactions
+from src.server.simulation import transactions, monitoring_agent
 
 
 logging.basicConfig(level=logging.INFO)
@@ -118,7 +118,8 @@ class ZerePyServer:
             asyncio.create_task(transactions(action='sell'))
             
             # Monitoring Sell Action by Performance
-            # Code here
+            asyncio.create_task(monitoring_agent(event='buy'))
+            asyncio.create_task(monitoring_agent(event='sell'))
             
         
         
@@ -219,7 +220,11 @@ class ZerePyServer:
             response = {"txhash": await self.agent_wallet.mint(request.user_address, request.amount)}
             return JSONResponse(content=response)
 
-
+        @self.app.post("/agent/swap")
+        async def swap(request: QuerySwap):
+            response = {"txhash": await self.agent_wallet.swap(request.user_address, request.token_in, request.token_out, request.amount)}
+            return JSONResponse(content=response)
+        
         @self.app.post("/agent/action")
         async def agent_action(action_request: ActionRequest):
             """Execute a single agent action"""

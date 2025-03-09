@@ -15,6 +15,12 @@ class QueryUserWallet(BaseModel):
 class QueryMint(BaseModel):
     user_address: str
     amount: str
+
+class QuerySwap(BaseModel):
+    user_address: str
+    token_in: str
+    token_out: str
+    amount: str
     
     
 async def get_address_data(key=None):

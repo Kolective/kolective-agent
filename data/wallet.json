@@ -2,10 +2,9 @@
   {
     "user_address": "0x0000000000000000000000000000000000000002",
     "data": "0xf39a392346d68b0c17bf173c3a9b0a65feb72b2095587568f4287a06c8f77249",
-    "risk_profile": null,
+    "risk_profile": "conservative",
     "tweet_transactions": [
-      123,
-      125
+      123
     ]
   }
 ]

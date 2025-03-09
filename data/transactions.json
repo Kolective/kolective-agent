@@ -1,0 +1,13 @@
+{
+  "users": [
+    {
+      "user_address": "0x0000000000000000000000000000000000000002",
+      "contracts": [
+        {
+          "contract_address": "0x5ffac3827ddEE20b479d27a2b72c5a44FcD752DF",
+          "price": "2719990553215989670345"
+        }
+      ]
+    }
+  ]
+}

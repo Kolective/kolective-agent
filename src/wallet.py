@@ -99,30 +99,7 @@ class AgentWallet:
         
         return tx_hash.hex()
     
-    # async def transfer(self, user_address, contract_address, to, amount):
-    #     amount = int(amount) * (10 ** 6)
-    #     abi = await self._read_abi("./abi/MockToken.json")
-        
-    #     private_key = await self.fetch_data(user_address)
-    #     sender_address = self.w3.eth.account.from_key(private_key).address
-        
-    #     token_contract = self.w3.eth.contract(address=contract_address, abi=abi)
-    #     nonce = self.w3.eth.get_transaction_count(sender_address)
-        
-    #     transaction = token_contract.functions.transfer(to, amount).build_transaction({
-    #         'chainId': 57054 ,
-    #         'gas': 1000000,
-    #         'gasPrice': self.w3.eth.gas_price,
-    #         'nonce': nonce,
-    #     })
-        
-    #     signed_txn = self.w3.eth.account.sign_transaction(transaction, private_key)
-    #     tx_hash = self.w3.eth.send_raw_transaction(signed_txn.rawTransaction)
-    #     self.w3.eth.wait_for_transaction_receipt(tx_hash)
-        
-    #     return f"0x{tx_hash.hex()}"
-    
-    async def swap_buy(self, user_address, token_in, token_out, amount):
+    async def swap(self, user_address, token_in, token_out, amount):
         private_key = await self.fetch_data(user_address)
         sender_address = self.w3.eth.account.from_key(private_key).address
         
@@ -160,38 +137,29 @@ class AgentWallet:
         private_key = await self.fetch_data(user_address)
         sender_address = self.w3.eth.account.from_key(private_key).address
 
-        # Load Token Contract ABI
         approve_abi = await self._read_abi("./abi/MockToken.json")
         token_contract = self.w3.eth.contract(address=token_in, abi=approve_abi)
 
-        # Fetch total balance in wallet
         balance = token_contract.functions.balanceOf(sender_address).call()
         if balance == 0:
             return "Insufficient balance"
 
-        print(f"User balance: {balance / 10**18} tokens")
-
-        # Convert balance to appropriate decimals
         amount_generalized = balance  
 
-        # Approve contract if necessary
         allowance = token_contract.functions.allowance(sender_address, "0x5AB3A2CB16B21DCFaf91CDb83EC96698FaBe6A99").call()
         if allowance < amount_generalized:
             approval_status = await self.approve(sender_address, private_key, token_in, amount_generalized)
             if not approval_status:
                 return "Approval failed"
 
-        # Load Swap Contract ABI
         abi = await self._read_abi("./abi/Kolective.json")
         swap_contract = self.w3.eth.contract(address="0x5AB3A2CB16B21DCFaf91CDb83EC96698FaBe6A99", abi=abi)
 
-        # Get nonce & gas estimate
         nonce = self.w3.eth.get_transaction_count(sender_address, 'pending')
         gas_estimate = swap_contract.functions.swap(token_in, token_out, amount_generalized).estimate_gas({
             'from': sender_address
         })
 
-        # Build transaction
         transaction = swap_contract.functions.swap(token_in, token_out, amount_generalized).build_transaction({
             'chainId': 57054,
             'gas': gas_estimate + 50000,
@@ -199,14 +167,12 @@ class AgentWallet:
             'nonce': nonce,
         })
 
-        # Sign and send transaction
         signed_txn = self.w3.eth.account.sign_transaction(transaction, private_key)
         tx_hash = self.w3.eth.send_raw_transaction(signed_txn.rawTransaction)
         self.w3.eth.wait_for_transaction_receipt(tx_hash)
 
         return f"Swap successful! Tx Hash: {tx_hash.hex()}"
 
-    
     
     async def approve(self, sender_address, private_key, token_in, amount):
         try:
