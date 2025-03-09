@@ -19,3 +19,6 @@ agents/*.json
 # macOS
 .DS_Store
 .codegpt
+
+# Wallet
+data/wallet.json
