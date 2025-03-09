@@ -14,7 +14,7 @@ import json
 import orjson
 from src.agent import ZerePyAgent
 from src.wallet import AgentWallet
-from src.server.schemas import QueryRequestClassifier, QueryUserWallet, QueryMint, QueryRequestRecommendation, QuerySwap
+from src.server.schemas import QueryRequestClassifier, QueryUserWallet, QueryMint, QueryRequestRecommendation, QuerySwap, QueryTransfer
 from src.server.utils import _update_risk_profile, _get_user_risk, _parse_data_kol
 from src.server.simulation import transactions, monitoring_agent
 
@@ -223,6 +223,11 @@ class ZerePyServer:
         @self.app.post("/agent/swap")
         async def swap(request: QuerySwap):
             response = {"txhash": await self.agent_wallet.swap(request.user_address, request.token_in, request.token_out, request.amount)}
+            return JSONResponse(content=response)
+        
+        @self.app.post("/agent/transfer")
+        async def swap(request: QueryTransfer):
+            response = {"txhash": await self.agent_wallet.transfer(request.user_address, request.amount, request.contract_address, request.destination)}
             return JSONResponse(content=response)
         
         @self.app.post("/agent/action")

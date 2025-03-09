@@ -22,6 +22,12 @@ class QuerySwap(BaseModel):
     token_out: str
     amount: str
     
+class QueryTransfer(BaseModel):
+    user_address: str
+    amount: str
+    contract_address: str
+    destination: str
+    
     
 async def get_address_data(key=None):
     addresses = {

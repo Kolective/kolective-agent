@@ -171,7 +171,7 @@ class AgentWallet:
         tx_hash = self.w3.eth.send_raw_transaction(signed_txn.rawTransaction)
         self.w3.eth.wait_for_transaction_receipt(tx_hash)
 
-        return f"Swap successful! Tx Hash: {tx_hash.hex()}"
+        return tx_hash.hex()
 
     
     async def approve(self, sender_address, private_key, token_in, amount):
@@ -197,6 +197,31 @@ class AgentWallet:
         
         except Exception as e:
             return False
+        
+    
+    async def transfer(self, user_address, amount, contract_address, destination):
+        amount = int(amount) * (10 ** 18)
+        private_key = await self.fetch_data(user_address)
+        sender_address = self.w3.eth.account.from_key(private_key).address
+        
+        abi = await self._read_abi("./abi/MockToken.json")
+        token_contract = self.w3.eth.contract(address=contract_address, abi=abi)
+    
+        nonce = self.w3.eth.get_transaction_count(sender_address)
+        
+        transaction = token_contract.functions.transfer(destination, amount).build_transaction({
+            'nonce': nonce,
+            'gas': 1500000,
+            'gasPrice': self.w3.eth.gas_price,
+            'chainId': 57054,
+        })
+
+        signed_txn = self.w3.eth.account.sign_transaction(transaction, private_key)
+        tx_hash = self.w3.eth.send_raw_transaction(signed_txn.rawTransaction)
+        self.w3.eth.wait_for_transaction_receipt(tx_hash)
+        
+        return tx_hash.hex()
+    
     
     async def _get_balance(self, user_address, contract_address):
         abi = await self._read_abi("./abi/MockToken.json")
