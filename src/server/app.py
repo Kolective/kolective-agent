@@ -113,15 +113,22 @@ class ZerePyServer:
             
         @self.app.on_event("startup")
         async def startup_event():
+            self.background_tasks = []
+    
             # Monitoring Action by Tweet
-            asyncio.create_task(transactions(action='buy'))
-            asyncio.create_task(transactions(action='sell'))
+            self.background_tasks.append(asyncio.create_task(transactions(action='buy')))
+            self.background_tasks.append(asyncio.create_task(transactions(action='sell')))
             
             # Monitoring Sell Action by Performance
-            asyncio.create_task(monitoring_agent(event='buy'))
-            asyncio.create_task(monitoring_agent(event='sell'))
+            self.background_tasks.append(asyncio.create_task(monitoring_agent(event='profit-monitoring')))
+            self.background_tasks.append(asyncio.create_task(monitoring_agent(event='cut-loss-monitoring')))
             
-        
+        @self.app.on_event("shutdown")
+        async def shutdown_event():
+            for task in self.background_tasks:
+                task.cancel()
+            
+            await asyncio.gather(*self.background_tasks, return_exceptions=True)
         
         @self.app.post("/generate-risk-profile")
         async def get_risk_profile(request: QueryRequestClassifier):

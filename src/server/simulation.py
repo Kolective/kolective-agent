@@ -221,57 +221,64 @@ async def _get_risk_profile(user_address):
 # Main function
 async def transactions(action: str):
     while True:
-        list_ca = await parse_contract_address(action)
-        allocation, tweet_ids = await append_allocation(list_ca)
-        
-        for user_address, contract_allocations in allocation.items():
-            processed_tweets = await _check_tweet_transaction(user_address)
+        try:
+            list_ca = await parse_contract_address(action)
+            allocation, tweet_ids = await append_allocation(list_ca)
             
-            match action:
-                case 'buy':
-                    balance = await get_balance(user_address, await get_address_data('SONIC'))
-                    
-                    if balance > 0:
-                        allocated_balances = {
-                            contract: ((balance * percentage / 100) // (10 ** 18)) for contract, percentage in contract_allocations.items()
-                        }
+            for user_address, contract_allocations in allocation.items():
+                processed_tweets = await _check_tweet_transaction(user_address)
+                
+                match action:
+                    case 'buy':
+                        balance = await get_balance(user_address, await get_address_data('SONIC'))
                         
-                        for (contract, allocated_amount), tweet_id in zip(allocated_balances.items(), tweet_ids):
-                            if tweet_id in processed_tweets:
-                                print(f"Skipping tweet_id {tweet_id}, already processed.")
-                                continue
+                        if balance > 0:
+                            allocated_balances = {
+                                contract: ((balance * percentage / 100) // (10 ** 18)) for contract, percentage in contract_allocations.items()
+                            }
                             
-                            print(f"  Contract {contract}: {allocated_amount:.2f}")
-                            print("Executing transaction...")
-                            
-                            tx_hash = await agent.swap(
-                                user_address=user_address,
-                                token_in=await get_address_data('SONIC'),
-                                token_out=contract,
-                                amount=allocated_amount
-                            )
-                            print(f"Successful Buy Trade! txhash: {tx_hash}")
-                            
-                            await _update_tweet_transaction(user_address, tweet_id)
-                            price = await query_graphql(tx_hash)
-                            await _update_user_transactions(user_address, contract, price)
-
-                case 'sell':
-                    processed_tweets = await _check_tweet_transaction(user_address)
-                    
-                    if processed_tweets:
-                        for contract, _ in contract_allocations.items():
-                            token_balance = await get_balance(user_address, contract)
-                            if token_balance > 0:
-                                tx_hash = await agent.swap_sell(
+                            for (contract, allocated_amount), tweet_id in zip(allocated_balances.items(), tweet_ids):
+                                if tweet_id in processed_tweets:
+                                    print(f"Skipping tweet_id {tweet_id}, already processed.")
+                                    continue
+                                
+                                await asyncio.sleep(0)
+                                print(f"  Contract {contract}: {allocated_amount:.2f}")
+                                print("Executing transaction...")
+                                
+                                tx_hash = await agent.swap(
                                     user_address=user_address,
-                                    token_in=contract,
-                                    token_out=await get_address_data('SONIC')
+                                    token_in=await get_address_data('SONIC'),
+                                    token_out=contract,
+                                    amount=allocated_amount
                                 )
-                                print(f"Successful Sell Trade! txhash: {tx_hash}")
-                    else:
-                        print(f"No previous buy transactions for {user_address}. Skipping transaction.")
+                                print(f"Successful Buy Trade! txhash: {tx_hash}")
+                                
+                                await _update_tweet_transaction(user_address, tweet_id)
+                                price = await query_graphql(tx_hash)
+                                await _update_user_transactions(user_address, contract, price)
 
+                    case 'sell':
+                        processed_tweets = await _check_tweet_transaction(user_address)
+                        
+                        if processed_tweets:
+                            for contract, _ in contract_allocations.items():
+                                await asyncio.sleep(0)
+                                token_balance = await get_balance(user_address, contract)
+                                if token_balance > 0:
+                                    tx_hash = await agent.swap_sell(
+                                        user_address=user_address,
+                                        token_in=contract,
+                                        token_out=await get_address_data('SONIC')
+                                    )
+                                    print(f"Successful Sell Trade! txhash: {tx_hash}")
+                        else:
+                            print(f"No previous buy transactions for {user_address}. Skipping transaction.")
+        
+        except Exception as e:
+            print(f"Error in transactions function: {e}")
+            await asyncio.sleep(1)
+            
         await asyncio.sleep(5)
         
 
